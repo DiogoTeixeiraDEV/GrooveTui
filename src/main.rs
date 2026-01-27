@@ -1,6 +1,6 @@
 mod app;
 mod audio;
-mod entities;
+mod music;
 mod tui;
 
 use anyhow::Result;
@@ -30,6 +30,7 @@ fn main() -> Result<()> {
     let mut app = App::new(tx);
 
     loop {
+        app.update();
         terminal.draw(|f| ui(f, &app))?;
 
         if matches!(handle_input(&mut app)?, InputAction::Quit) {

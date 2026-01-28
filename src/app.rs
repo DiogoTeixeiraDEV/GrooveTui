@@ -4,6 +4,12 @@ use std::time::{Duration, Instant};
 use crate::audio::AudioCommand;
 use crate::music::MusicState;
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum AppTab {
+    Groove,
+    Tuner,
+}
+
 pub struct App {
     bpm: u64,
     is_playing: bool,
@@ -11,6 +17,7 @@ pub struct App {
     start_time: Instant,
     last_tick: Instant,
     audio_tx: Sender<AudioCommand>,
+    current_tab: AppTab,
 }
 
 impl App {
@@ -22,6 +29,7 @@ impl App {
             start_time: Instant::now(),
             last_tick: Instant::now(),
             audio_tx: tx,
+            current_tab: AppTab::Groove,
         }
     }
 
@@ -51,6 +59,17 @@ impl App {
 
     pub fn suggested_scales(&self) -> Vec<String> {
         self.music.suggested_scales()
+    }
+
+    pub fn current_tab(&self) -> AppTab {
+        self.current_tab
+    }
+
+    pub fn current_tab_index(&self) -> usize {
+        match self.current_tab {
+            AppTab::Groove => 0,
+            AppTab::Tuner => 1,
+        }
     }
 
     pub fn root_pitch_class(&self) -> u8 {
@@ -88,6 +107,13 @@ impl App {
 
     pub fn next_root_pitch(&mut self) {
         self.music.next_root_pitch();
+    }
+
+    pub fn next_tab(&mut self) {
+        self.current_tab = match self.current_tab {
+            AppTab::Groove => AppTab::Tuner,
+            AppTab::Tuner => AppTab::Groove,
+        };
     }
 
     pub fn prev_root_pitch(&mut self) {

@@ -45,4 +45,42 @@ The goal of GrooveTui is to be the ideal companion for your practice sessions, o
 The metronome shows a smooth pendulum animation that swings in real-time synced to your selected BPM. The harmony panel displays the current chord and suggested scales to practice.
 
 ---
-*A deep dive into Rust, TUI development, and interactive music theory education.*
+
+## Future Funcionalities
+
+🚀 Development Roadmap - **Tuner**
+1. Audio Infrastructure (Core)
+
+    [ ] Device Selection: List and select input devices across platforms using cpal.
+
+    [ ] Capture Stream: Configure audio callbacks to capture raw samples in f32 format.
+
+    [ ] Channel Handling: Implement logic to isolate the guitar channel (Mono/Left) from multi-channel interfaces.
+
+    [ ] Circular Buffer: Implement a thread-safe ringbuf (Producer/Consumer) to stream audio data to the logic thread without blocking the UI.
+
+2. Digital Signal Processing (DSP)
+
+    [ ] Pitch Detection: Integrate the YIN algorithm (via pitch-detection crate) for fundamental frequency extraction.
+
+    [ ] Noise Gate: Implement a threshold to ignore background noise and silence.
+
+    [ ] Signal Smoothing: Apply a Moving Average filter to stabilize the needle and prevent jitter.
+
+    [ ] Musical Mapping: Create a conversion engine: Frequency (Hz) → MIDI Note → Cents (pitch deviation).
+
+3. User Interface (TUI/Ratatui)
+
+    [ ] Main Dashboard: Layout featuring the detected note name, octave, and real-time frequency.
+
+    [ ] Precision Meter: Implement a Canvas widget for a fluid analog needle using Braille patterns for high-resolution graphics.
+
+    [ ] Dynamic Feedback: Visual cues using colors (e.g., Green for "In Tune", Red/Yellow for "Sharp/Flat").
+
+    [ ] Settings Menu: Interactive UI to switch audio devices and adjust the reference pitch (e.g., A=440Hz vs. A=432Hz).
+
+4. Performance & Optimization
+
+    [ ] Multi-threading: Decouple audio processing from the Ratatui render loop to ensure 60+ FPS UI performance.
+
+    [ ] Latency Tuning: Optimize buffer sizes to balance instantaneous response with low-frequency (E2) accuracy.

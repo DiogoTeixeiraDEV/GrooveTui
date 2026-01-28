@@ -40,7 +40,7 @@ pub fn ui(f: &mut Frame, app: &App) {
     fretboard::render(f, chunks[2], app);
 
     let help_text =
-        " [Space] Play/Pause | [Q] Quit | [↑/↓] BPM | [←/→] Root | [[/]] Quality | [G/H] Genre ";
+        " [Space] Play/Pause | [Q] Quit | [↑/↓] BPM | [←/→] Root | [< / >] Major/Minor | [G] Genre ";
     let footer = Paragraph::new(help_text)
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::NONE));

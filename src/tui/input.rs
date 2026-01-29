@@ -32,7 +32,12 @@ pub fn handle_input(app: &mut App) -> Result<InputAction> {
                             KeyCode::Char('h') | KeyCode::Char('H') => app.next_genre(),
                             _ => {}
                         },
-                        AppTab::Tuner => {}
+                        AppTab::Tuner => match key.code {
+                            KeyCode::Char(' ') => app.toggle_tuner_capture(),
+                            KeyCode::Left => app.prev_tuner_device(),
+                            KeyCode::Right => app.next_tuner_device(),
+                            _ => {}
+                        },
                     },
                 }
             }

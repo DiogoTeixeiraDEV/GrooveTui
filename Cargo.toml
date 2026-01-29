@@ -10,10 +10,10 @@ crossterm = "0.27"
 
 # Áudio
 rodio = "0.17"
-cpal = "0.1"
+cpal = "0.15"
 
-crossbeam-channel = "0.3"
-pitch-detection "0.3"
+crossbeam-channel = "0.5"
+pitch-detection = "0.3"
 
 
 # Utilitários e Tratamento de Erros

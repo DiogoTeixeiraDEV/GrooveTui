@@ -3,6 +3,7 @@ use std::time::{Duration, Instant};
 
 use crate::audio::AudioCommand;
 use crate::music::MusicState;
+use crate::tui::tuner_state::TunerState;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum AppTab {
@@ -18,6 +19,7 @@ pub struct App {
     last_tick: Instant,
     audio_tx: Sender<AudioCommand>,
     current_tab: AppTab,
+    tuner: TunerState,
 }
 
 impl App {
@@ -30,6 +32,7 @@ impl App {
             last_tick: Instant::now(),
             audio_tx: tx,
             current_tab: AppTab::Groove,
+            tuner: TunerState::new(),
         }
     }
 
@@ -95,6 +98,9 @@ impl App {
     }
 
     pub fn update(&mut self) {
+        // Always update tuner state for level metering
+        self.tuner.update();
+        
         if !self.is_playing {
             return;
         }
@@ -201,5 +207,27 @@ impl App {
 
     pub fn quit_audio(&self) {
         let _ = self.audio_tx.send(AudioCommand::Quit);
+    }
+
+    // --- Tuner methods ---
+
+    pub fn tuner(&self) -> &TunerState {
+        &self.tuner
+    }
+
+    pub fn tuner_mut(&mut self) -> &mut TunerState {
+        &mut self.tuner
+    }
+
+    pub fn toggle_tuner_capture(&mut self) {
+        self.tuner.toggle_capture();
+    }
+
+    pub fn next_tuner_device(&mut self) {
+        self.tuner.next_device();
+    }
+
+    pub fn prev_tuner_device(&mut self) {
+        self.tuner.prev_device();
     }
 }

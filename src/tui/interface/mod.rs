@@ -3,9 +3,12 @@ use ratatui::{prelude::*, widgets::*};
 use crate::app::{App, AppTab};
 
 pub mod fretboard;
+pub mod frequency;
 pub mod harmony;
 pub mod metronome;
 pub mod tuner;
+pub mod volume;
+pub mod waveform;
 
 pub fn ui(f: &mut Frame, app: &App) {
     let size = f.size();

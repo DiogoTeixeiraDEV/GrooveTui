@@ -1,6 +1,7 @@
 use ratatui::{prelude::*, widgets::*};
 
 use crate::app::App;
+use crate::tui::interface::{frequency, volume, waveform};
 
 pub fn render(f: &mut Frame, area: Rect, app: &App) {
     let tuner = app.tuner();
@@ -19,7 +20,9 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
         .constraints([
             Constraint::Length(3), // Device Selector
             Constraint::Length(3), // Status info
-            Constraint::Min(10),   // Volume Meter and Visualization
+            Constraint::Length(3), // Frequency
+            Constraint::Length(3), // Volume Meter
+            Constraint::Min(8),    // Waveform
         ])
         .margin(1)
         .split(inner_area);
@@ -53,37 +56,24 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
     ]))
     .alignment(Alignment::Center);
     f.render_widget(status_widget, chunks[1]);
+
+    // --- Frequency ---
+    frequency::render(f, chunks[2], tuner);
     
-    // --- Volume Meter ---
-    // Split the middle section
+    // --- Volume Meter (smaller) ---
     let meter_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(10),
-            Constraint::Percentage(80),
-            Constraint::Percentage(10),
+            Constraint::Percentage(20),
+            Constraint::Percentage(60),
+            Constraint::Percentage(20),
         ])
-        .split(chunks[2]);
-        
-    let level = tuner.current_level();
-    let peak = tuner.peak_level();
-    
-    let gauge_color = if peak > 0.9 {
-        Color::Red
-    } else if peak > 0.7 {
-        Color::Yellow
-    } else {
-        Color::Green
-    };
+        .split(chunks[3]);
 
-    let label = format!("{:.1}%", level * 100.0);
-    let gauge = Gauge::default()
-        .block(Block::default().title(" Input Level ").borders(Borders::ALL))
-        .gauge_style(Style::default().fg(gauge_color))
-        .ratio(level.clamp(0.0, 1.0) as f64)
-        .label(label);
-        
-    f.render_widget(gauge, meter_chunks[1]);
+    volume::render(f, meter_chunks[1], tuner);
+
+    // --- Waveform ---
+    waveform::render(f, chunks[4], tuner);
 
     // --- Error Overlay ---
     if let Some(err) = tuner.error_message() {

@@ -93,16 +93,6 @@ impl AudioCapture {
         self.is_running.load(Ordering::SeqCst)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn start(&mut self) -> Result<Receiver<Vec<f32>>> {
         if self.is_running() {
             return Err(anyhow!("Capture is already running"));

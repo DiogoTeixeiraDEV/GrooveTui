@@ -9,7 +9,8 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::prelude::*;
-use std::{io, sync::mpsc, thread};
+use std::{fs::OpenOptions, io, sync::mpsc, thread};
+use std::os::unix::io::AsRawFd;
 
 use app::App;
 use tui::{
@@ -18,6 +19,7 @@ use tui::{
 };
 
 fn main() -> Result<()> {
+    redirect_stderr_to_devnull();
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
@@ -44,4 +46,12 @@ fn main() -> Result<()> {
 
     let _ = audio_thread.join();
     Ok(())
+}
+
+fn redirect_stderr_to_devnull() {
+    if let Ok(devnull) = OpenOptions::new().write(true).open("/dev/null") {
+        unsafe {
+            libc::dup2(devnull.as_raw_fd(), libc::STDERR_FILENO);
+        }
+    }
 }

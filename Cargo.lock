@@ -10,6 +10,7 @@ dependencies = [
  "cpal",
  "crossbeam-channel",
  "crossterm",
+ "libc",
  "pitch-detection",
  "ratatui",
  "rodio",

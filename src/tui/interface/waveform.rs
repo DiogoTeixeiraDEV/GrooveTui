@@ -44,7 +44,7 @@ pub fn render(f: &mut Frame, area: Rect, tuner: &TunerState) {
                     y1: prev_y,
                     x2: x,
                     y2: y,
-                    color: Color::Cyan,
+                    color: Color::Green,
                 });
                 prev_x = x;
                 prev_y = y;

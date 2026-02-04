@@ -40,6 +40,10 @@ pub struct TunerState {
     current_clarity: Option<f32>,
 }
 
+const NOTE_NAMES: [&str; 12] = [
+    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+];
+
 impl TunerState {
     
     pub fn new() -> Self {
@@ -118,6 +122,11 @@ impl TunerState {
 
     pub fn current_clarity(&self) -> Option<f32> {
         self.current_clarity
+    }
+
+    pub fn current_note_label(&self) -> Option<String> {
+        let freq = self.current_frequency?;
+        Self::note_label_from_frequency(freq)
     }
 
     pub fn waveform_samples(&self) -> &[f32] {
@@ -304,6 +313,17 @@ impl TunerState {
 
     fn smooth_alpha() -> f32 {
         0.2
+    }
+
+    fn note_label_from_frequency(freq: f32) -> Option<String> {
+        if !freq.is_finite() || freq <= 0.0 {
+            return None;
+        }
+
+        let midi = 69.0 + 12.0 * (freq / 440.0).log2();
+        let midi_rounded = midi.round() as i32;
+        let note_index = ((midi_rounded % 12) + 12) % 12;
+        Some(NOTE_NAMES[note_index as usize].to_string())
     }
 
     fn push_waveform_samples(&mut self, samples: &[f32]) {

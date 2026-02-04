@@ -31,6 +31,10 @@ pub struct TunerState {
     last_smooth: f32,
     has_last_smooth: bool,
 
+    raw_buffer: Vec<f32>,
+    last_freq_smooth: f32,
+    has_last_freq_smooth: bool,
+
     frequency_detector: FrequencyDetector,
     current_frequency: Option<f32>,
     current_clarity: Option<f32>,
@@ -54,6 +58,9 @@ impl TunerState {
             waveform_buffer: Vec::with_capacity(Self::waveform_capacity()),
             last_smooth: 0.0,
             has_last_smooth: false,
+            raw_buffer: Vec::with_capacity(Self::raw_buffer_capacity()),
+            last_freq_smooth: 0.0,
+            has_last_freq_smooth: false,
             frequency_detector: FrequencyDetector::new(
                 Self::detector_size(),
                 Self::detector_padding(),
@@ -194,6 +201,9 @@ impl TunerState {
         self.waveform_buffer.clear();
         self.last_smooth = 0.0;
         self.has_last_smooth = false;
+        self.raw_buffer.clear();
+        self.last_freq_smooth = 0.0;
+        self.has_last_freq_smooth = false;
         self.current_frequency = None;
         self.current_clarity = None;
     }
@@ -210,14 +220,8 @@ impl TunerState {
                 let rms = Self::calculate_rms(&samples);
                 self.current_level = rms;
 
+                self.push_raw_samples(&samples);
                 self.push_waveform_samples(&samples);
-
-                if let Some((freq, clarity)) =
-                    self.frequency_detector.detect(&samples, self.sample_rate)
-                {
-                    self.current_frequency = Some(freq);
-                    self.current_clarity = Some(clarity);
-                }
 
                 if rms > self.peak_level {
                     self.peak_level = rms;
@@ -225,6 +229,25 @@ impl TunerState {
             }
 
             self.sample_rx = Some(rx);
+        }
+
+        if self.raw_buffer.len() >= Self::detector_size() {
+            let start = self.raw_buffer.len() - Self::detector_size();
+            let window = &self.raw_buffer[start..];
+            if let Some((freq, clarity)) =
+                self.frequency_detector.detect(window, self.sample_rate)
+            {
+                let alpha = Self::frequency_smooth_alpha();
+                let smoothed = if self.has_last_freq_smooth {
+                    alpha * freq + (1.0 - alpha) * self.last_freq_smooth
+                } else {
+                    self.has_last_freq_smooth = true;
+                    freq
+                };
+                self.last_freq_smooth = smoothed;
+                self.current_frequency = Some(smoothed);
+                self.current_clarity = Some(clarity);
+            }
         }
         
         
@@ -251,6 +274,10 @@ impl TunerState {
         256
     }
 
+    fn raw_buffer_capacity() -> usize {
+        Self::detector_size() * 4
+    }
+
     fn detector_size() -> usize {
         1024
     }
@@ -265,6 +292,10 @@ impl TunerState {
 
     fn clarity_threshold() -> f64 {
         0.7
+    }
+
+    fn frequency_smooth_alpha() -> f32 {
+        0.25
     }
 
     fn waveform_decimation() -> usize {
@@ -298,6 +329,19 @@ impl TunerState {
         if self.waveform_buffer.len() > capacity {
             let overflow = self.waveform_buffer.len() - capacity;
             self.waveform_buffer.drain(0..overflow);
+        }
+    }
+
+    fn push_raw_samples(&mut self, samples: &[f32]) {
+        if samples.is_empty() {
+            return;
+        }
+
+        self.raw_buffer.extend_from_slice(samples);
+        let capacity = Self::raw_buffer_capacity();
+        if self.raw_buffer.len() > capacity {
+            let overflow = self.raw_buffer.len() - capacity;
+            self.raw_buffer.drain(0..overflow);
         }
     }
 }

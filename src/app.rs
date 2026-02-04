@@ -98,7 +98,7 @@ impl App {
     }
 
     pub fn update(&mut self) {
-        // Always update tuner state for level metering
+        
         self.tuner.update();
         
         if !self.is_playing {
@@ -209,7 +209,7 @@ impl App {
         let _ = self.audio_tx.send(AudioCommand::Quit);
     }
 
-    // --- Tuner methods ---
+    
 
     pub fn tuner(&self) -> &TunerState {
         &self.tuner

@@ -7,6 +7,7 @@ pub mod frequency;
 pub mod harmony;
 pub mod metronome;
 pub mod tuner;
+pub mod tuner_pedal;
 pub mod volume;
 pub mod waveform;
 

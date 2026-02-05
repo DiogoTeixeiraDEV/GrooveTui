@@ -186,7 +186,10 @@ impl TunerState {
     }
 
     fn try_start_capture(&mut self, device_name: Option<&str>) -> Result<()> {
-        let config = CaptureConfig { buffer_size: 1024 };
+        let config = CaptureConfig {
+            buffer_size: 1024,
+            input_gain: 8.0,
+        };
         let mut capture = AudioCapture::new(device_name, Some(config))?;
         
         self.sample_rate = capture.sample_rate();   
@@ -288,7 +291,7 @@ impl TunerState {
     }
 
     fn detector_size() -> usize {
-        1024
+        2048
     }
 
     fn detector_padding() -> usize {
@@ -296,11 +299,11 @@ impl TunerState {
     }
 
     fn power_threshold() -> f64 {
-        5.0
+        0.5
     }
 
     fn clarity_threshold() -> f64 {
-        0.7
+        0.6
     }
 
     fn frequency_smooth_alpha() -> f32 {
@@ -309,6 +312,10 @@ impl TunerState {
 
     fn waveform_decimation() -> usize {
         4
+    }
+
+    fn waveform_display_gain() -> f32 {
+        3.0
     }
 
     fn smooth_alpha() -> f32 {
@@ -334,12 +341,14 @@ impl TunerState {
         let decimation = Self::waveform_decimation();
         let alpha = Self::smooth_alpha();
 
+        let display_gain = Self::waveform_display_gain();
         for sample in samples.iter().step_by(decimation) {
+            let boosted = (sample * display_gain).clamp(-1.0, 1.0);
             let smoothed = if self.has_last_smooth {
-                alpha * sample + (1.0 - alpha) * self.last_smooth
+                alpha * boosted + (1.0 - alpha) * self.last_smooth
             } else {
                 self.has_last_smooth = true;
-                *sample
+                boosted
             };
             self.last_smooth = smoothed;
             self.waveform_buffer.push(smoothed);

@@ -1,7 +1,7 @@
 use ratatui::{prelude::*, widgets::*};
 
 use crate::app::App;
-use crate::tui::interface::{frequency, volume, waveform};
+use crate::tui::interface::{tuner_pedal, volume};
 
 pub fn render(f: &mut Frame, area: Rect, app: &App) {
     let tuner = app.tuner();
@@ -20,9 +20,8 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
         .constraints([
             Constraint::Length(3), // Device Selector
             Constraint::Length(3), // Status info
-            Constraint::Length(3), // Frequency
+            Constraint::Min(8),    // Pedal Tuner
             Constraint::Length(3), // Volume Meter
-            Constraint::Min(8),    // Waveform
         ])
         .margin(1)
         .split(inner_area);
@@ -57,8 +56,8 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
     .alignment(Alignment::Center);
     f.render_widget(status_widget, chunks[1]);
 
-    // --- Frequency ---
-    frequency::render(f, chunks[2], tuner);
+    // --- Pedal Tuner ---
+    tuner_pedal::render(f, chunks[2], tuner);
     
     // --- Volume Meter (smaller) ---
     let meter_chunks = Layout::default()
@@ -71,9 +70,6 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
         .split(chunks[3]);
 
     volume::render(f, meter_chunks[1], tuner);
-
-    // --- Waveform ---
-    waveform::render(f, chunks[4], tuner);
 
     // --- Error Overlay ---
     if let Some(err) = tuner.error_message() {

@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 pub const DEFAULT_BUFFER_SIZE: usize = 2048;
+pub const DEFAULT_INPUT_GAIN: f32 = 1.0;
 
 pub fn list_input_devices() -> Result<Vec<String>> {
     let host = cpal::default_host();
@@ -30,15 +31,15 @@ pub fn default_input_device_name() -> Result<String> {
 
 #[derive(Clone, Debug)]
 pub struct CaptureConfig {
-    
-    
     pub buffer_size: usize,
+    pub input_gain: f32,
 }
 
 impl Default for CaptureConfig {
     fn default() -> Self {
         Self {
             buffer_size: DEFAULT_BUFFER_SIZE,
+            input_gain: DEFAULT_INPUT_GAIN,
         }
     }
 }
@@ -92,6 +93,7 @@ impl AudioCapture {
         let (tx, rx) = bounded::<Vec<f32>>(1);
         let channels = self.config.channels as usize;
         let buffer_size = self.capture_config.buffer_size;
+        let input_gain = self.capture_config.input_gain;
         let is_running = Arc::clone(&self.is_running);
 
         
@@ -102,7 +104,14 @@ impl AudioCapture {
             .build_input_stream(
                 &self.config,
                 move |data: &[f32], _: &cpal::InputCallbackInfo| {
-                    Self::process_samples(data, channels, &mut sample_buffer, buffer_size, &tx);
+                    Self::process_samples(
+                        data,
+                        channels,
+                        &mut sample_buffer,
+                        buffer_size,
+                        input_gain,
+                        &tx,
+                    );
                 },
                 move |err| {
                     
@@ -171,12 +180,14 @@ impl AudioCapture {
         channels: usize,
         buffer: &mut Vec<f32>,
         target_size: usize,
+        input_gain: f32,
         tx: &Sender<Vec<f32>>,
     ) {
         
         for chunk in data.chunks(channels) {
             if let Some(&sample) = chunk.first() {
-                buffer.push(sample);
+                let amplified = (sample * input_gain).clamp(-1.0, 1.0);
+                buffer.push(amplified);
 
                 
                 if buffer.len() >= target_size {

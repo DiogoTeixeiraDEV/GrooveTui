@@ -51,33 +51,33 @@ The metronome shows a smooth pendulum animation that swings in real-time synced 
 🚀 Development Roadmap - **Tuner**
 1. Audio Infrastructure (Core)
 
-    [ ] Device Selection: List and select input devices across platforms using cpal.
+    [x] Device Selection: List and select input devices across platforms using cpal.
 
-    [ ] Capture Stream: Configure audio callbacks to capture raw samples in f32 format.
+    [x] Capture Stream: Configure audio callbacks to capture raw samples in f32 format.
 
-    [ ] Channel Handling: Implement logic to isolate the guitar channel (Mono/Left) from multi-channel interfaces.
+    [x] Channel Handling: Implement logic to isolate the guitar channel (Mono/Left) from multi-channel interfaces.
 
-    [ ] Circular Buffer: Implement a thread-safe ringbuf (Producer/Consumer) to stream audio data to the logic thread without blocking the UI.
+    [x] Circular Buffer: Implement a thread-safe ringbuf (Producer/Consumer) to stream audio data to the logic thread without blocking the UI.
 
 2. Digital Signal Processing (DSP)
 
-    [ ] Pitch Detection: Integrate the YIN algorithm (via pitch-detection crate) for fundamental frequency extraction.
+    [x] Pitch Detection: Integrate the YIN algorithm (via pitch-detection crate) for fundamental frequency extraction.
 
-    [ ] Noise Gate: Implement a threshold to ignore background noise and silence.
+    [x] Noise Gate: Implement a threshold to ignore background noise and silence.
 
-    [ ] Signal Smoothing: Apply a Moving Average filter to stabilize the needle and prevent jitter.
+    [x] Signal Smoothing: Apply a Moving Average filter to stabilize the needle and prevent jitter.
 
-    [ ] Musical Mapping: Create a conversion engine: Frequency (Hz) → MIDI Note → Cents (pitch deviation).
+    [x] Musical Mapping: Create a conversion engine: Frequency (Hz) → MIDI Note → Cents (pitch deviation).
 
 3. User Interface (TUI/Ratatui)
 
-    [ ] Main Dashboard: Layout featuring the detected note name, octave, and real-time frequency.
+    [x] Main Dashboard: Layout featuring the detected note name, octave, and real-time frequency.
 
-    [ ] Precision Meter: Implement a Canvas widget for a fluid analog needle using Braille patterns for high-resolution graphics.
+    [x] Precision Meter: Implement a Canvas widget for a fluid analog needle using Braille patterns for high-resolution graphics.
 
-    [ ] Dynamic Feedback: Visual cues using colors (e.g., Green for "In Tune", Red/Yellow for "Sharp/Flat").
+    [x] Dynamic Feedback: Visual cues using colors (e.g., Green for "In Tune", Red/Yellow for "Sharp/Flat").
 
-    [ ] Settings Menu: Interactive UI to switch audio devices and adjust the reference pitch (e.g., A=440Hz vs. A=432Hz).
+    [x] Settings Menu: Interactive UI to switch audio devices and adjust the reference pitch (e.g., A=440Hz vs. A=432Hz).
 
 4. Performance & Optimization
 

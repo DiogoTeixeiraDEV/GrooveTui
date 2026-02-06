@@ -36,11 +36,11 @@ fn draw_guitar_neck(
     let content_area = container.inner(area);
     let note_width = 8usize;
 
-    let root_style = Style::default().fg(Color::LightYellow).add_modifier(Modifier::BOLD);
+    let root_style = Style::default().fg(Color::LightGreen).add_modifier(Modifier::BOLD);
     let scale_style = Style::default().fg(Color::LightCyan);
     let empty_style = Style::default().fg(Color::DarkGray);
     let number_style = Style::default().fg(Color::Gray).add_modifier(Modifier::DIM);
-    let marker_number_style = Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD);
+    let marker_number_style = Style::default().fg(Color::Green).add_modifier(Modifier::BOLD);
 
     let scale_set: HashSet<u8> = scale_notes.iter().copied().collect();
 

@@ -26,29 +26,34 @@ pub fn render(f: &mut Frame, area: Rect, tuner: &TunerState) {
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(3)])
+        .constraints([Constraint::Length(2), Constraint::Min(3)])
         .split(inner);
 
-    let (note_text, offset_cents) = match tuner.current_frequency() {
+    let (note_text, details_text, offset_cents) = match tuner.current_frequency() {
         Some(freq) => match nearest_target(freq) {
-            Some((label, target, cents)) => {
-                let note = format!(
-                    "Note: {}   Detected: {:.2} Hz   Target: {:.2} Hz   Offset: {:+.1} cents",
-                    label, freq, target, cents
-                );
-                (note, Some(cents))
-            }
-            None => (
-                format!("Detected: {:.2} Hz", freq),
-                None,
+            Some((label, target, cents)) => (
+                note_display(label),
+                format!(
+                    "Detected: {:.2} Hz   Target: {:.2} Hz   Offset: {:+.1} cents",
+                    freq, target, cents
+                ),
+                Some(cents),
             ),
+            None => ("".to_string(), format!("Detected: {:.2} Hz", freq), None),
         },
-        None => ("Waiting for audio...".to_string(), None),
+        None => ("".to_string(), "Waiting for audio...".to_string(), None),
     };
 
-    let note_widget = Paragraph::new(note_text)
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::NONE));
+    let note_color = tuning_color(offset_cents);
+    let note_style = Style::default().fg(note_color).add_modifier(Modifier::BOLD);
+    let details_style = Style::default().fg(Color::White);
+
+    let note_widget = Paragraph::new(vec![
+        Line::from(Span::styled(details_text, details_style)),
+        Line::from(Span::styled(note_text, note_style)),
+    ])
+    .alignment(Alignment::Center)
+    .block(Block::default().borders(Borders::NONE));
     f.render_widget(note_widget, chunks[0]);
 
     let max_cents = 100.0;
@@ -56,6 +61,7 @@ pub fn render(f: &mut Frame, area: Rect, tuner: &TunerState) {
         .unwrap_or(0.0)
         .clamp(-max_cents, max_cents) as f64;
 
+    let needle_color = tuning_color(offset_cents);
     let canvas = Canvas::default()
         .x_bounds([-max_cents as f64, max_cents as f64])
         .y_bounds([0.0, 1.0])
@@ -81,7 +87,7 @@ pub fn render(f: &mut Frame, area: Rect, tuner: &TunerState) {
                 y1: 0.2,
                 x2: needle_x,
                 y2: 0.9,
-                color: Color::Green,
+                color: needle_color,
             });
         });
 
@@ -103,4 +109,29 @@ fn nearest_target(freq: f32) -> Option<(&'static str, f32, f32)> {
     }
 
     best
+}
+
+fn tuning_color(offset_cents: Option<f32>) -> Color {
+    match offset_cents {
+        Some(cents) => {
+            let distance = cents.abs();
+            if distance <= 10.0 {
+                Color::Green
+            } else if distance <= 25.0 {
+                Color::Yellow
+            } else {
+                Color::Red
+            }
+        }
+        None => Color::Gray,
+    }
+}
+
+fn note_display(label: &str) -> String {
+    let trimmed: String = label.chars().take_while(|c| !c.is_ascii_digit()).collect();
+    if trimmed.is_empty() {
+        label.to_string()
+    } else {
+        trimmed
+    }
 }

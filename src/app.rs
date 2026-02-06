@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use crate::audio::AudioCommand;
 use crate::music::MusicState;
-use crate::tui::tuner_state::TunerState;
+use crate::tui::state::TunerState;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum AppTab {

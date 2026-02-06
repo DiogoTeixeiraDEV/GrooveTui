@@ -1,6 +1,6 @@
 use ratatui::{prelude::*, widgets::*};
 
-use crate::tui::tuner_state::TunerState;
+use crate::tui::state::TunerState;
 
 pub fn render(f: &mut Frame, area: Rect, tuner: &TunerState) {
     let level = tuner.current_level().clamp(0.0, 1.0);

@@ -4,7 +4,7 @@ use ratatui::{
     widgets::canvas::Line as CanvasLine,
 };
 
-use crate::tui::tuner_state::TunerState;
+use crate::tui::state::TunerState;
 
 const TARGETS: [(&str, f32); 6] = [
     ("E2", 82.0),

@@ -40,10 +40,6 @@ pub struct TunerState {
     current_clarity: Option<f32>,
 }
 
-const NOTE_NAMES: [&str; 12] = [
-    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
-];
-
 impl TunerState {
     const WAVEFORM_CAPACITY: usize = 256;
     const DETECTOR_SIZE: usize = 2048;
@@ -107,24 +103,6 @@ impl TunerState {
 
     pub fn current_frequency(&self) -> Option<f32> {
         self.current_frequency
-    }
-
-    pub fn current_clarity(&self) -> Option<f32> {
-        self.current_clarity
-    }
-
-    pub fn current_note_label(&self) -> Option<String> {
-        let freq = self.current_frequency?;
-        Self::note_label_from_frequency(freq)
-    }
-
-
-    
-    pub fn refresh_devices(&mut self) {
-        self.available_devices = list_input_devices().unwrap_or_default();
-        if self.selected_device_index >= self.available_devices.len() {
-            self.selected_device_index = 0;
-        }
     }
 
     
@@ -274,17 +252,6 @@ impl TunerState {
 
     fn detector_padding() -> usize {
         Self::DETECTOR_SIZE / 2
-    }
-
-    fn note_label_from_frequency(freq: f32) -> Option<String> {
-        if !freq.is_finite() || freq <= 0.0 {
-            return None;
-        }
-
-        let midi = 69.0 + 12.0 * (freq / 440.0).log2();
-        let midi_rounded = midi.round() as i32;
-        let note_index = ((midi_rounded % 12) + 12) % 12;
-        Some(NOTE_NAMES[note_index as usize].to_string())
     }
 
     fn push_waveform_samples(&mut self, samples: &[f32]) {

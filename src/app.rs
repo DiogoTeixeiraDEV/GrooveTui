@@ -215,10 +215,6 @@ impl App {
         &self.tuner
     }
 
-    pub fn tuner_mut(&mut self) -> &mut TunerState {
-        &mut self.tuner
-    }
-
     pub fn toggle_tuner_capture(&mut self) {
         self.tuner.toggle_capture();
     }

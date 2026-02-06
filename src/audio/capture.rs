@@ -20,15 +20,6 @@ pub fn list_input_devices() -> Result<Vec<String>> {
 }
 
 
-pub fn default_input_device_name() -> Result<String> {
-    let host = cpal::default_host();
-    host.default_input_device()
-        .ok_or_else(|| anyhow!("No default input device available"))?
-        .name()
-        .context("Failed to get default device name")
-}
-
-
 #[derive(Clone, Debug)]
 pub struct CaptureConfig {
     pub buffer_size: usize,
@@ -73,11 +64,6 @@ impl AudioCapture {
     
     pub fn sample_rate(&self) -> u32 {
         self.config.sample_rate.0
-    }
-
-    
-    pub fn channels(&self) -> u16 {
-        self.config.channels
     }
 
     

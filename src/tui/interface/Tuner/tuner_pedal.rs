@@ -51,7 +51,7 @@ pub fn render(f: &mut Frame, area: Rect, tuner: &TunerState) {
         .block(Block::default().borders(Borders::NONE));
     f.render_widget(note_widget, chunks[0]);
 
-    let max_cents = 50.0;
+    let max_cents = 100.0;
     let needle_x = offset_cents
         .unwrap_or(0.0)
         .clamp(-max_cents, max_cents) as f64;

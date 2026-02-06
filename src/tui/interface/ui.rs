@@ -2,10 +2,7 @@ use ratatui::{prelude::*, widgets::*};
 
 use crate::app::{App, AppTab};
 
-#[path = "Groove/mod.rs"]
-pub mod groove;
-#[path = "Tuner/mod.rs"]
-pub mod tuner;
+use crate::tui::interface::{groove, tuner};
 
 pub fn ui(f: &mut Frame, app: &App) {
     let size = f.size();

@@ -45,6 +45,14 @@ const NOTE_NAMES: [&str; 12] = [
 ];
 
 impl TunerState {
+    const WAVEFORM_CAPACITY: usize = 256;
+    const DETECTOR_SIZE: usize = 2048;
+    const POWER_THRESHOLD: f64 = 0.5;
+    const CLARITY_THRESHOLD: f64 = 0.6;
+    const FREQUENCY_SMOOTH_ALPHA: f32 = 0.25;
+    const WAVEFORM_DECIMATION: usize = 4;
+    const WAVEFORM_DISPLAY_GAIN: f32 = 3.0;
+    const WAVEFORM_SMOOTH_ALPHA: f32 = 0.2;
     
     pub fn new() -> Self {
         let available_devices = list_input_devices().unwrap_or_default();
@@ -59,17 +67,17 @@ impl TunerState {
             sample_rate: 44100,
             is_capturing: false,
             error_message: None,
-            waveform_buffer: Vec::with_capacity(Self::waveform_capacity()),
+            waveform_buffer: Vec::with_capacity(Self::WAVEFORM_CAPACITY),
             last_smooth: 0.0,
             has_last_smooth: false,
             raw_buffer: Vec::with_capacity(Self::raw_buffer_capacity()),
             last_freq_smooth: 0.0,
             has_last_freq_smooth: false,
             frequency_detector: FrequencyDetector::new(
-                Self::detector_size(),
+                Self::DETECTOR_SIZE,
                 Self::detector_padding(),
-                Self::power_threshold(),
-                Self::clarity_threshold(),
+                Self::POWER_THRESHOLD,
+                Self::CLARITY_THRESHOLD,
             ),
             current_frequency: None,
             current_clarity: None,
@@ -77,41 +85,22 @@ impl TunerState {
     }
 
     
-    pub fn available_devices(&self) -> &[String] {
-        &self.available_devices
-    }
-
-    
     pub fn selected_device(&self) -> Option<&str> {
         self.available_devices.get(self.selected_device_index).map(|s| s.as_str())
     }
 
-    
-    pub fn selected_device_index(&self) -> usize {
-        self.selected_device_index
-    }
-
-    
     pub fn current_level(&self) -> f32 {
         self.current_level
     }
 
-    
     pub fn peak_level(&self) -> f32 {
         self.peak_level
     }
 
-    
-    pub fn sample_rate(&self) -> u32 {
-        self.sample_rate
-    }
-
-    
     pub fn is_capturing(&self) -> bool {
         self.is_capturing
     }
 
-    
     pub fn error_message(&self) -> Option<&str> {
         self.error_message.as_deref()
     }
@@ -129,9 +118,6 @@ impl TunerState {
         Self::note_label_from_frequency(freq)
     }
 
-    pub fn waveform_samples(&self) -> &[f32] {
-        &self.waveform_buffer
-    }
 
     
     pub fn refresh_devices(&mut self) {
@@ -243,13 +229,13 @@ impl TunerState {
             self.sample_rx = Some(rx);
         }
 
-        if self.raw_buffer.len() >= Self::detector_size() {
-            let start = self.raw_buffer.len() - Self::detector_size();
+        if self.raw_buffer.len() >= Self::DETECTOR_SIZE {
+            let start = self.raw_buffer.len() - Self::DETECTOR_SIZE;
             let window = &self.raw_buffer[start..];
             if let Some((freq, clarity)) =
                 self.frequency_detector.detect(window, self.sample_rate)
             {
-                let alpha = Self::frequency_smooth_alpha();
+                let alpha = Self::FREQUENCY_SMOOTH_ALPHA;
                 let smoothed = if self.has_last_freq_smooth {
                     alpha * freq + (1.0 - alpha) * self.last_freq_smooth
                 } else {
@@ -282,44 +268,12 @@ impl TunerState {
         (rms * 3.0).clamp(0.0, 1.0)
     }
 
-    fn waveform_capacity() -> usize {
-        256
-    }
-
     fn raw_buffer_capacity() -> usize {
-        Self::detector_size() * 4
-    }
-
-    fn detector_size() -> usize {
-        2048
+        Self::DETECTOR_SIZE * 4
     }
 
     fn detector_padding() -> usize {
-        Self::detector_size() / 2
-    }
-
-    fn power_threshold() -> f64 {
-        0.5
-    }
-
-    fn clarity_threshold() -> f64 {
-        0.6
-    }
-
-    fn frequency_smooth_alpha() -> f32 {
-        0.25
-    }
-
-    fn waveform_decimation() -> usize {
-        4
-    }
-
-    fn waveform_display_gain() -> f32 {
-        3.0
-    }
-
-    fn smooth_alpha() -> f32 {
-        0.2
+        Self::DETECTOR_SIZE / 2
     }
 
     fn note_label_from_frequency(freq: f32) -> Option<String> {
@@ -338,10 +292,10 @@ impl TunerState {
             return;
         }
 
-        let decimation = Self::waveform_decimation();
-        let alpha = Self::smooth_alpha();
+        let decimation = Self::WAVEFORM_DECIMATION;
+        let alpha = Self::WAVEFORM_SMOOTH_ALPHA;
 
-        let display_gain = Self::waveform_display_gain();
+        let display_gain = Self::WAVEFORM_DISPLAY_GAIN;
         for sample in samples.iter().step_by(decimation) {
             let boosted = (sample * display_gain).clamp(-1.0, 1.0);
             let smoothed = if self.has_last_smooth {
@@ -354,7 +308,7 @@ impl TunerState {
             self.waveform_buffer.push(smoothed);
         }
 
-        let capacity = Self::waveform_capacity();
+        let capacity = Self::WAVEFORM_CAPACITY;
         if self.waveform_buffer.len() > capacity {
             let overflow = self.waveform_buffer.len() - capacity;
             self.waveform_buffer.drain(0..overflow);

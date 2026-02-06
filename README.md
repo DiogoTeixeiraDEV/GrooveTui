@@ -33,6 +33,7 @@ The goal of GrooveTui is to be the ideal companion for your practice sessions, o
 - `G`: Previous genre
 - `H`: Next genre
 - `Q`: Quit safely
+- `Tab`: Switch Tabs
 
 ## 🎵 How to Use
 

@@ -226,4 +226,12 @@ impl App {
     pub fn prev_tuner_device(&mut self) {
         self.tuner.prev_device();
     }
+
+    pub fn increase_tuner_gain(&mut self) {
+        self.tuner.increase_input_gain();
+    }
+
+    pub fn decrease_tuner_gain(&mut self) {
+        self.tuner.decrease_input_gain();
+    }
 }

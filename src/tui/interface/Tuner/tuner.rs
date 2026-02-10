@@ -20,7 +20,8 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
         .constraints([
             Constraint::Length(3), 
             Constraint::Length(3), 
-            Constraint::Min(8),    
+            Constraint::Length(3), 
+            Constraint::Min(6),    
             Constraint::Length(3), 
         ])
         .margin(1)
@@ -56,8 +57,19 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
     .alignment(Alignment::Center);
     f.render_widget(status_widget, chunks[1]);
 
+    let gain_text = Line::from(vec![
+        Span::raw("Input Gain: "),
+        Span::styled(
+            format!("{:.1}", tuner.input_gain()),
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        ),
+        Span::raw("  (Use [↑/↓] to adjust)"),
+    ]);
+    let gain_widget = Paragraph::new(gain_text).alignment(Alignment::Center);
+    f.render_widget(gain_widget, chunks[2]);
+
     
-    tuner_pedal::render(f, chunks[2], tuner);
+    tuner_pedal::render(f, chunks[3], tuner);
     
     
     let meter_chunks = Layout::default()
@@ -67,7 +79,7 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
             Constraint::Percentage(60),
             Constraint::Percentage(20),
         ])
-        .split(chunks[3]);
+        .split(chunks[4]);
 
     volume::render(f, meter_chunks[1], tuner);
 

@@ -38,6 +38,8 @@ pub struct TunerState {
     frequency_detector: FrequencyDetector,
     current_frequency: Option<f32>,
     current_clarity: Option<f32>,
+
+    input_gain: f32,
 }
 
 impl TunerState {
@@ -49,6 +51,10 @@ impl TunerState {
     const WAVEFORM_DECIMATION: usize = 4;
     const WAVEFORM_DISPLAY_GAIN: f32 = 3.0;
     const WAVEFORM_SMOOTH_ALPHA: f32 = 0.2;
+    const INPUT_GAIN_MIN: f32 = 0.0;
+    const INPUT_GAIN_MAX: f32 = 10.0;
+    const INPUT_GAIN_STEP: f32 = 0.5;
+    const INPUT_GAIN_DEFAULT: f32 = 8.0;
     
     pub fn new() -> Self {
         let available_devices = list_input_devices().unwrap_or_default();
@@ -77,6 +83,7 @@ impl TunerState {
             ),
             current_frequency: None,
             current_clarity: None,
+            input_gain: Self::INPUT_GAIN_DEFAULT,
         }
     }
 
@@ -103,6 +110,10 @@ impl TunerState {
 
     pub fn current_frequency(&self) -> Option<f32> {
         self.current_frequency
+    }
+
+    pub fn input_gain(&self) -> f32 {
+        self.input_gain
     }
 
     
@@ -132,6 +143,14 @@ impl TunerState {
         }
     }
 
+    pub fn increase_input_gain(&mut self) {
+        self.adjust_input_gain(Self::INPUT_GAIN_STEP);
+    }
+
+    pub fn decrease_input_gain(&mut self) {
+        self.adjust_input_gain(-Self::INPUT_GAIN_STEP);
+    }
+
     
     pub fn start_capture(&mut self) {
         self.error_message = None;
@@ -152,7 +171,7 @@ impl TunerState {
     fn try_start_capture(&mut self, device_name: Option<&str>) -> Result<()> {
         let config = CaptureConfig {
             buffer_size: 1024,
-            input_gain: 8.0,
+            input_gain: self.input_gain,
         };
         let mut capture = AudioCapture::new(device_name, Some(config))?;
         
@@ -163,6 +182,20 @@ impl TunerState {
         self.sample_rx = Some(rx);
         
         Ok(())
+    }
+
+    fn adjust_input_gain(&mut self, delta: f32) {
+        let new_gain = (self.input_gain + delta)
+            .clamp(Self::INPUT_GAIN_MIN, Self::INPUT_GAIN_MAX);
+        if (new_gain - self.input_gain).abs() < f32::EPSILON {
+            return;
+        }
+
+        self.input_gain = new_gain;
+        if self.is_capturing {
+            self.stop_capture();
+            self.start_capture();
+        }
     }
 
     

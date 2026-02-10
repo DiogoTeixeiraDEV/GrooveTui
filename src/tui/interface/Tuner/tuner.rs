@@ -53,7 +53,6 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
     let status_widget = Paragraph::new(Line::from(vec![
         Span::raw("Status: "),
         Span::styled(status_text, status_style),
-        Span::raw("  (Press [Space] to toggle)"),
     ]))
     .alignment(Alignment::Center);
     f.render_widget(status_widget, chunks[1]);

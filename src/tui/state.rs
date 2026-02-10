@@ -6,6 +6,21 @@ use crossbeam_channel::Receiver;
 use crate::audio::capture::{AudioCapture, CaptureConfig, list_input_devices};
 use crate::audio::frequency::FrequencyDetector;
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum TuningMode {
+    Auto,
+    Manual,
+}
+
+pub const TUNER_STRINGS: [(&str, f32); 6] = [
+    ("E2", 82.0),
+    ("A2", 110.0),
+    ("D3", 146.8),
+    ("G3", 196.0),
+    ("B3", 246.9),
+    ("E4", 329.63),
+];
+
 
 pub struct TunerState {
     
@@ -40,6 +55,9 @@ pub struct TunerState {
     current_clarity: Option<f32>,
 
     input_gain: f32,
+
+    tuning_mode: TuningMode,
+    selected_string_index: usize,
 }
 
 impl TunerState {
@@ -84,6 +102,8 @@ impl TunerState {
             current_frequency: None,
             current_clarity: None,
             input_gain: Self::INPUT_GAIN_DEFAULT,
+            tuning_mode: TuningMode::Auto,
+            selected_string_index: 0,
         }
     }
 
@@ -114,6 +134,42 @@ impl TunerState {
 
     pub fn input_gain(&self) -> f32 {
         self.input_gain
+    }
+
+    pub fn tuning_mode(&self) -> TuningMode {
+        self.tuning_mode
+    }
+
+    pub fn toggle_tuning_mode(&mut self) {
+        self.tuning_mode = match self.tuning_mode {
+            TuningMode::Auto => TuningMode::Manual,
+            TuningMode::Manual => TuningMode::Auto,
+        };
+    }
+
+    pub fn selected_string(&self) -> (&'static str, f32) {
+        TUNER_STRINGS[self.selected_string_index]
+    }
+
+    pub fn selected_string_label(&self) -> &'static str {
+        self.selected_string().0
+    }
+
+    pub fn selected_string_target(&self) -> f32 {
+        self.selected_string().1
+    }
+
+    pub fn next_string(&mut self) {
+        self.selected_string_index =
+            (self.selected_string_index + 1) % TUNER_STRINGS.len();
+    }
+
+    pub fn prev_string(&mut self) {
+        if self.selected_string_index == 0 {
+            self.selected_string_index = TUNER_STRINGS.len() - 1;
+        } else {
+            self.selected_string_index -= 1;
+        }
     }
 
     

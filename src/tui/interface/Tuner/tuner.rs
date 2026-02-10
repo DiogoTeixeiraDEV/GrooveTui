@@ -1,6 +1,7 @@
 use ratatui::{prelude::*, widgets::*};
 
 use crate::app::App;
+use crate::tui::state::TuningMode;
 use super::{tuner_pedal, volume};
 
 pub fn render(f: &mut Frame, area: Rect, app: &App) {
@@ -18,11 +19,11 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3), 
-            Constraint::Length(3), 
-            Constraint::Length(3), 
-            Constraint::Min(6),    
-            Constraint::Length(3), 
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Min(8),
+            Constraint::Length(3),
         ])
         .margin(1)
         .split(inner_area);
@@ -57,16 +58,54 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
     .alignment(Alignment::Center);
     f.render_widget(status_widget, chunks[1]);
 
+    let control_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(34),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .split(chunks[2]);
+
+    let mode_text = Line::from(vec![
+        Span::raw("Mode: "),
+        Span::styled(
+            format!("{:?}", tuner.tuning_mode()),
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        ),
+    ]);
+    let mode_widget = Paragraph::new(mode_text).alignment(Alignment::Center);
+    f.render_widget(mode_widget, control_chunks[0]);
+
     let gain_text = Line::from(vec![
         Span::raw("Input Gain: "),
         Span::styled(
             format!("{:.1}", tuner.input_gain()),
             Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
         ),
-        Span::raw("  (Use [↑/↓] to adjust)"),
     ]);
     let gain_widget = Paragraph::new(gain_text).alignment(Alignment::Center);
-    f.render_widget(gain_widget, chunks[2]);
+    f.render_widget(gain_widget, control_chunks[1]);
+
+    let string_text = if tuner.tuning_mode() == TuningMode::Manual {
+        Line::from(vec![
+            Span::raw("Target String: "),
+            Span::styled(
+                tuner.selected_string_label(),
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            ),
+        ])
+    } else {
+        Line::from(vec![
+            Span::raw("Target String: "),
+            Span::styled(
+                "Auto",
+                Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD),
+            ),
+        ])
+    };
+    let string_widget = Paragraph::new(string_text).alignment(Alignment::Center);
+    f.render_widget(string_widget, control_chunks[2]);
 
     
     tuner_pedal::render(f, chunks[3], tuner);

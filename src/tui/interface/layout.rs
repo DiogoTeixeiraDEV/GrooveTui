@@ -64,7 +64,7 @@ pub fn ui(f: &mut Frame, app: &App) {
         AppTab::Groove => {
             " [Tab] Switch | [Space] Play/Pause | [Q] Quit | [↑/↓] BPM | [←/→] Root | [< / >] Major/Minor | [G] Genre "
         }
-        AppTab::Tuner => " [Tab] Switch | [Q] Quit | [↑/↓] Gain ",
+        AppTab::Tuner => " [Tab] Switch | [Q] Quit | [↑/↓] Gain  | [M] Mode | [A/D] Target String  ",
     };
     let footer = Paragraph::new(help_text)
         .alignment(Alignment::Center)

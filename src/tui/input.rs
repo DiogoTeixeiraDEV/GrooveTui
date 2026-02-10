@@ -3,6 +3,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use std::time::Duration;
 
 use crate::app::{App, AppTab};
+use crate::tui::state::TuningMode;
 
 pub enum InputAction {
     Continue,
@@ -38,6 +39,19 @@ pub fn handle_input(app: &mut App) -> Result<InputAction> {
                             KeyCode::Right => app.next_tuner_device(),
                             KeyCode::Up => app.increase_tuner_gain(),
                             KeyCode::Down => app.decrease_tuner_gain(),
+                            KeyCode::Char('m') | KeyCode::Char('M') => {
+                                app.toggle_tuner_mode();
+                            }
+                            KeyCode::Char('a') => {
+                                if app.tuner_mode() == TuningMode::Manual {
+                                    app.prev_tuner_string();
+                                }
+                            }
+                            KeyCode::Char('d') => {
+                                if app.tuner_mode() == TuningMode::Manual {
+                                    app.next_tuner_string();
+                                }
+                            }
                             _ => {}
                         },
                     },

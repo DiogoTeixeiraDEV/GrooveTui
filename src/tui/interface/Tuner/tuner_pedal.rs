@@ -4,16 +4,7 @@ use ratatui::{
     widgets::canvas::Line as CanvasLine,
 };
 
-use crate::tui::state::TunerState;
-
-const TARGETS: [(&str, f32); 6] = [
-    ("E2", 82.0),
-    ("A2", 110.0),
-    ("D3", 146.8),
-    ("G3", 196.0),
-    ("B3", 246.9),
-    ("E4", 329.63),
-];
+use crate::tui::state::{TunerState, TuningMode, TUNER_STRINGS};
 
 pub fn render(f: &mut Frame, area: Rect, tuner: &TunerState) {
     let block = Block::default().borders(Borders::ALL);
@@ -30,16 +21,30 @@ pub fn render(f: &mut Frame, area: Rect, tuner: &TunerState) {
         .split(inner);
 
     let (note_text, details_text, offset_cents) = match tuner.current_frequency() {
-        Some(freq) => match nearest_target(freq) {
-            Some((label, target, cents)) => (
-                note_display(label),
-                format!(
-                    "Detected: {:.2} Hz   Target: {:.2} Hz   Offset: {:+.1} cents",
-                    freq, target, cents
+        Some(freq) => match tuner.tuning_mode() {
+            TuningMode::Manual => {
+                let (label, target) = tuner.selected_string();
+                let cents = cents_offset(freq, target);
+                (
+                    note_display(label),
+                    format!(
+                        "Detected: {:.2} Hz   Target: {:.2} Hz   Offset: {:+.1} cents",
+                        freq, target, cents
+                    ),
+                    Some(cents),
+                )
+            }
+            TuningMode::Auto => match nearest_target(freq) {
+                Some((label, target, cents)) => (
+                    note_display(label),
+                    format!(
+                        "Detected: {:.2} Hz   Target: {:.2} Hz   Offset: {:+.1} cents",
+                        freq, target, cents
+                    ),
+                    Some(cents),
                 ),
-                Some(cents),
-            ),
-            None => ("".to_string(), format!("Detected: {:.2} Hz", freq), None),
+                None => ("".to_string(), format!("Detected: {:.2} Hz", freq), None),
+            },
         },
         None => ("".to_string(), "Waiting for audio...".to_string(), None),
     };
@@ -100,8 +105,8 @@ fn nearest_target(freq: f32) -> Option<(&'static str, f32, f32)> {
     }
 
     let mut best: Option<(&'static str, f32, f32)> = None;
-    for (label, target) in TARGETS.iter() {
-        let cents = 1200.0 * (freq / *target).log2();
+    for (label, target) in TUNER_STRINGS.iter() {
+        let cents = cents_offset(freq, *target);
         match best {
             Some((_, _, best_cents)) if cents.abs() >= best_cents.abs() => {}
             _ => best = Some((label, *target, cents)),
@@ -109,6 +114,10 @@ fn nearest_target(freq: f32) -> Option<(&'static str, f32, f32)> {
     }
 
     best
+}
+
+fn cents_offset(freq: f32, target: f32) -> f32 {
+    1200.0 * (freq / target).log2()
 }
 
 fn tuning_color(offset_cents: Option<f32>) -> Color {

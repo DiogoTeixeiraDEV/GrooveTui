@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use crate::audio::AudioCommand;
 use crate::music::MusicState;
-use crate::tui::state::TunerState;
+use crate::tui::state::{TunerState, TuningMode};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum AppTab {
@@ -215,6 +215,10 @@ impl App {
         &self.tuner
     }
 
+    pub fn tuner_mode(&self) -> TuningMode {
+        self.tuner.tuning_mode()
+    }
+
     pub fn toggle_tuner_capture(&mut self) {
         self.tuner.toggle_capture();
     }
@@ -233,5 +237,17 @@ impl App {
 
     pub fn decrease_tuner_gain(&mut self) {
         self.tuner.decrease_input_gain();
+    }
+
+    pub fn toggle_tuner_mode(&mut self) {
+        self.tuner.toggle_tuning_mode();
+    }
+
+    pub fn next_tuner_string(&mut self) {
+        self.tuner.next_string();
+    }
+
+    pub fn prev_tuner_string(&mut self) {
+        self.tuner.prev_string();
     }
 }

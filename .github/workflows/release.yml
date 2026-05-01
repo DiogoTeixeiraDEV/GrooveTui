@@ -23,11 +23,6 @@ jobs:
             binary_name: groove-tui.exe
             archive_name: groove-tui-windows-x86_64
             archive_format: zip
-          - os: macos-13
-            target: x86_64-apple-darwin
-            binary_name: groove-tui
-            archive_name: groove-tui-macos-x86_64
-            archive_format: tar.gz
           - os: macos-14
             target: native
             binary_name: groove-tui

@@ -50,6 +50,12 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Install Linux audio dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libasound2-dev
+
       - name: Build release binary
         shell: bash
         run: |

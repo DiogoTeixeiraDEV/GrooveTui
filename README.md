@@ -6,11 +6,11 @@ GrooveTui is a minimalist guitar practice companion for the terminal. Built in R
 
 ### Groove tab
 
-![Groove tab screenshot](assets/screenshots/groove-tab.svg)
+![Groove tab screenshot](assets/screenshots/groove.png)
 
 ### Tuner tab
 
-![Tuner tab screenshot](assets/screenshots/tuner-tab.svg)
+![Tuner tab screenshot](assets/screenshots/tuner.png)
 
 ## Usage
 
@@ -27,31 +27,6 @@ groove-tui
 ```bash
 cargo run --release
 ```
-
-## Releases
-
-GitHub Actions builds release archives for Linux, Windows, macOS x86_64, and macOS arm64 whenever you push a tag that starts with `v`.
-
-To publish a release:
-
-```bash
-git tag v0.2.1
-git push origin v0.2.1
-```
-
-When the workflow finishes, GitHub will create a Release page with downloadable files such as:
-
-- `groove-tui-linux-x86_64.tar.gz`
-- `groove-tui-windows-x86_64.zip`
-- `groove-tui-macos-x86_64.tar.gz`
-- `groove-tui-macos-arm64.tar.gz`
-
-People can download the release from the GitHub Releases page in the browser, or with the GitHub CLI:
-
-```bash
-gh release download v0.2.1
-```
-
 ## Controls
 
 Global

@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ matrix.target }}" = "native" ]; then
-            cargo build --release --locked
+            cargo build --release
           else
             cargo build --release --locked --target ${{ matrix.target }}
           fi

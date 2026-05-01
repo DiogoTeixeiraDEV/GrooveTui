@@ -2,6 +2,31 @@
 
 GrooveTui is a minimalist guitar practice companion for the terminal. Built in Rust, it combines a metronome, harmony suggestions, a fretboard view, and a real-time tuner inside a fast TUI.
 
+## Screenshots
+
+### Groove tab
+
+![Groove tab screenshot](assets/screenshots/groove.png)
+
+### Tuner tab
+
+![Tuner tab screenshot](assets/screenshots/tuner.png)
+
+## Usage
+
+Install it with:
+
+```bash
+cargo install groove-tui
+```
+
+```bash
+groove-tui
+```
+
+```bash
+cargo run --release
+```
 ## Controls
 
 Global
@@ -29,33 +54,8 @@ Tuner tab
 - `A`: previous target string (manual mode)
 - `D`: next target string (manual mode)
 
-## Usage
-
-Install it with:
-
-```bash
-cargo install groove-tui
-```
-
-```bash
-groove-tui
-```
-
-```bash
-cargo run --release
-```
 
 Use `Tab` to switch between Groove and Tuner. In the Tuner tab, select an input device and press `Space` to start capture.
-
-## Screenshots
-
-### Groove tab
-
-![Groove tab screenshot](assets/screenshots/groove.png)
-
-### Tuner tab
-
-![Tuner tab screenshot](assets/screenshots/tuner.png)
 
 ## Tech Stack
 

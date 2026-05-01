@@ -41,6 +41,18 @@ Tuner tab
 
 ## Usage
 
+After publishing to crates.io, install it with:
+
+```bash
+cargo install groove-tui
+```
+
+Then run it with:
+
+```bash
+groove-tui
+```
+
 ```bash
 cargo run --release
 ```

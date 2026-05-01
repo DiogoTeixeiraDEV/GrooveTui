@@ -1,7 +1,14 @@
 [package]
-name = "GrooveTui"
+name = "groove-tui"
 version = "0.2.0"
 edition = "2024"
+description = "A terminal guitar practice companion with metronome, tuner, and fretboard tools"
+license = "MIT"
+repository = "https://github.com/DiogoTeixeiraDEV/GrooveTui"
+homepage = "https://github.com/DiogoTeixeiraDEV/GrooveTui"
+readme = "README.md"
+keywords = ["tui", "guitar", "metronome", "tuner"]
+categories = ["command-line-interface"]
 
 [dependencies]
 # Interface (TUI)

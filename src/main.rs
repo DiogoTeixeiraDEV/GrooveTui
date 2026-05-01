@@ -9,8 +9,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::prelude::*;
-use std::{fs::OpenOptions, io, sync::mpsc, thread};
-use std::os::unix::io::AsRawFd;
+use std::{io, sync::mpsc, thread};
+
+#[cfg(unix)]
+use std::{fs::OpenOptions, os::unix::io::AsRawFd};
 
 use app::App;
 use tui::{
@@ -49,9 +51,13 @@ fn main() -> Result<()> {
 }
 
 fn redirect_stderr_to_devnull() {
+    #[cfg(unix)]
     if let Ok(devnull) = OpenOptions::new().write(true).open("/dev/null") {
         unsafe {
             libc::dup2(devnull.as_raw_fd(), libc::STDERR_FILENO);
         }
     }
+
+    #[cfg(not(unix))]
+    let _ = ();
 }

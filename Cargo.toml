@@ -1,6 +1,6 @@
 [package]
 name = "groove-tui"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 description = "A terminal guitar practice companion with metronome, tuner, and fretboard tools"
 license = "MIT"

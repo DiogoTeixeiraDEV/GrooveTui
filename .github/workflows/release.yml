@@ -56,7 +56,7 @@ jobs:
           if [ "${{ matrix.target }}" = "native" ]; then
             cargo build --release
           else
-            cargo build --release --locked --target ${{ matrix.target }}
+            cargo build --release --target ${{ matrix.target }}
           fi
 
       - name: Package artifact (Unix)

@@ -1,6 +1,6 @@
 # GrooveTui
 
-GrooveTui is a minimalist guitar practice companion for the terminal. Built in Rust, it combines a metronome, harmony suggestions, a fretboard view, and a real-time tuner inside a fast TUI.
+GrooveTui is a minimalist guitar practice companion for the terminal. Built in Rust, it combines a metronome, harmony suggestions, a fretboard view, YouTube backing-track search, and a real-time tuner inside a fast TUI.
 
 ## Screenshots
 
@@ -27,6 +27,13 @@ groove-tui
 ```bash
 cargo run --release
 ```
+
+Backing-track search and playback use external command-line tools:
+
+```bash
+brew install yt-dlp mpv
+```
+
 ## Controls
 
 Global
@@ -54,8 +61,20 @@ Tuner tab
 - `A`: previous target string (manual mode)
 - `D`: next target string (manual mode)
 
+Backing tab
+- `/`: edit search query
+- `Enter`: run search
+- `Esc`: cancel query editing
+- `Arrow Up`: previous result
+- `Arrow Down`: next result
+- `Space`: play/pause selected track
+- `F`: favorite/unfavorite selected track
+- `V`: switch between search results and favorites
+- `S`: stop playback
 
-Use `Tab` to switch between Groove and Tuner. In the Tuner tab, select an input device and press `Space` to start capture.
+Use `Tab` to switch between Groove, Tuner, and Backing. In the Tuner tab, select an input device and press `Space` to start capture.
+
+When a backing track starts, GrooveTui tries to infer the key, major/minor quality, and genre from the track title/search text, then updates the Groove tab's scale suggestions and fretboard overlay.
 
 ## Tech Stack
 
@@ -66,3 +85,5 @@ Use `Tab` to switch between Groove and Tuner. In the Tuner tab, select an input 
 - cpal
 - pitch-detection
 - rust-music-theory
+- yt-dlp
+- mpv

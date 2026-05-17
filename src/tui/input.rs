@@ -54,6 +54,33 @@ pub fn handle_input(app: &mut App) -> Result<InputAction> {
                             }
                             _ => {}
                         },
+                        AppTab::Backing => {
+                            if app.backing_tracks().editing_query() {
+                                match key.code {
+                                    KeyCode::Enter => app.backing_submit_search(),
+                                    KeyCode::Esc => app.backing_cancel_query_edit(),
+                                    KeyCode::Backspace => app.backing_backspace_query(),
+                                    KeyCode::Char(c) => app.backing_push_query_char(c),
+                                    _ => {}
+                                }
+                            } else {
+                                match key.code {
+                                    KeyCode::Char('/') => app.backing_begin_search_edit(),
+                                    KeyCode::Enter => app.backing_submit_search(),
+                                    KeyCode::Up => app.backing_prev_result(),
+                                    KeyCode::Down => app.backing_next_result(),
+                                    KeyCode::Char(' ') => app.backing_toggle_selected(),
+                                    KeyCode::Char('f') | KeyCode::Char('F') => {
+                                        app.backing_toggle_favorite();
+                                    }
+                                    KeyCode::Char('v') | KeyCode::Char('V') => {
+                                        app.backing_toggle_library_view();
+                                    }
+                                    KeyCode::Char('s') | KeyCode::Char('S') => app.backing_stop(),
+                                    _ => {}
+                                }
+                            }
+                        }
                     },
                 }
             }

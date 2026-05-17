@@ -30,14 +30,14 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
 
     
     let device_name = tuner.selected_device().unwrap_or("No devices found");
-    
+
     let device_text = Line::from(vec![
         Span::raw("Input Device: "),
         Span::styled(" < ", Style::default().fg(Color::DarkGray)),
         Span::styled(device_name, Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
         Span::styled(" > ", Style::default().fg(Color::DarkGray)),
     ]);
-    
+
     let device_widget = Paragraph::new(device_text)
         .alignment(Alignment::Center)
         .block(Block::default().borders(Borders::BOTTOM).border_style(Style::default().fg(Color::DarkGray)));

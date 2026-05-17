@@ -1,6 +1,6 @@
 use ratatui::{prelude::*, widgets::*};
 
-use crate::app::{App, BackingPlayerState, BackingSearchState};
+use crate::app::{App, BackingLibraryView, BackingPlayerState, BackingSearchState};
 
 pub fn render(f: &mut Frame, area: Rect, app: &App) {
     let backing = app.backing_tracks();
@@ -62,12 +62,18 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
             } else {
                 "  "
             };
+            let favorite = if backing.is_favorite(track) {
+                "★ "
+            } else {
+                "  "
+            };
             let duration = track
                 .duration_label()
                 .unwrap_or_else(|| "--:--".to_string());
             let channel = track.channel().unwrap_or("Unknown channel");
             ListItem::new(Line::from(vec![
                 Span::styled(marker, Style::default().fg(Color::Cyan)),
+                Span::styled(favorite, Style::default().fg(Color::Yellow)),
                 Span::styled(track.title(), Style::default().fg(Color::White)),
                 Span::raw("  "),
                 Span::styled(duration, Style::default().fg(Color::DarkGray)),
@@ -81,7 +87,10 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
         let help = match backing.search_state() {
             BackingSearchState::Idle => "Search for things like: funk backing track E minor 90 bpm",
             BackingSearchState::Searching => "Searching YouTube...",
-            BackingSearchState::Ready => "No results found. Try a more specific query.",
+            BackingSearchState::Ready => match backing.library_view() {
+                BackingLibraryView::SearchResults => "No results found. Try a more specific query.",
+                BackingLibraryView::Favorites => "No favorites yet. Pick a track and press F.",
+            },
             BackingSearchState::Failed(_) => "Search failed. Check the status message above.",
         };
         let empty_results = Paragraph::new(help)
@@ -163,7 +172,23 @@ fn status_line(app: &App) -> Line<'static> {
             Span::styled("Searching ", Style::default().fg(Color::Yellow)),
             Span::raw("with yt-dlp"),
         ]),
-        BackingSearchState::Ready => Line::from(format!("{} result(s)", backing.results().len())),
+        BackingSearchState::Ready => {
+            let view = match backing.library_view() {
+                BackingLibraryView::SearchResults => "Results",
+                BackingLibraryView::Favorites => "Favorites",
+            };
+            let favorite_hint = if backing.selected_is_favorite() {
+                "favorited"
+            } else {
+                "press F to favorite"
+            };
+            let message = backing.message().unwrap_or(favorite_hint);
+            Line::from(format!(
+                "{view}: {} shown | {} favorite(s) | {message}",
+                backing.results().len(),
+                backing.favorites_len()
+            ))
+        }
         BackingSearchState::Failed(message) => Line::from(Span::styled(
             message.clone(),
             Style::default().fg(Color::Red),

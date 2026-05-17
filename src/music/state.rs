@@ -160,6 +160,20 @@ impl MusicState {
         self.genre_index = (self.genre_index + 1) % GENRES.len();
     }
 
+    pub fn set_context(&mut self, root: Option<&str>, quality: Option<&str>, genre: Option<&str>) {
+        if let Some(root) = root.and_then(find_root_pitch_index) {
+            self.root_pitch_index = root;
+        }
+
+        if let Some(quality) = quality.and_then(find_chord_quality_index) {
+            self.chord_quality_index = quality;
+        }
+
+        if let Some(genre) = genre.and_then(find_genre_index) {
+            self.genre_index = genre;
+        }
+    }
+
     pub fn prev_genre(&mut self) {
         if self.genre_index == 0 {
             self.genre_index = GENRES.len() - 1;
@@ -301,6 +315,36 @@ impl MusicState {
         }
     }
 
+}
+
+fn find_root_pitch_index(label: &str) -> Option<usize> {
+    let normalized = normalize_music_token(label);
+    ROOT_PITCHES.iter().position(|pitch| {
+        normalize_music_token(&format!("{pitch}")) == normalized
+    })
+}
+
+fn find_chord_quality_index(label: &str) -> Option<usize> {
+    let normalized = label.trim().to_ascii_lowercase();
+    CHORD_QUALITIES
+        .iter()
+        .position(|(_, quality)| quality.to_ascii_lowercase() == normalized)
+}
+
+fn find_genre_index(label: &str) -> Option<usize> {
+    let normalized = label.trim().to_ascii_lowercase();
+    GENRES
+        .iter()
+        .position(|genre| genre.to_ascii_lowercase() == normalized)
+}
+
+fn normalize_music_token(label: &str) -> String {
+    label
+        .trim()
+        .replace('#', "s")
+        .replace('♯', "s")
+        .replace('b', "b")
+        .to_ascii_lowercase()
 }
 
 struct ScaleSuggestion {

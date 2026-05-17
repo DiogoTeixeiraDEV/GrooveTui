@@ -70,6 +70,12 @@ pub fn handle_input(app: &mut App) -> Result<InputAction> {
                                     KeyCode::Up => app.backing_prev_result(),
                                     KeyCode::Down => app.backing_next_result(),
                                     KeyCode::Char(' ') => app.backing_toggle_selected(),
+                                    KeyCode::Char('f') | KeyCode::Char('F') => {
+                                        app.backing_toggle_favorite();
+                                    }
+                                    KeyCode::Char('v') | KeyCode::Char('V') => {
+                                        app.backing_toggle_library_view();
+                                    }
                                     KeyCode::Char('s') | KeyCode::Char('S') => app.backing_stop(),
                                     _ => {}
                                 }

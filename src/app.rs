@@ -1,7 +1,7 @@
 use std::io::{BufRead, BufReader, Write};
 #[cfg(unix)]
 use std::os::unix::net::UnixStream;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -34,12 +34,13 @@ struct YtDlpEntry {
     url: Option<String>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct BackingTrack {
     title: String,
     channel: Option<String>,
     duration_seconds: Option<u64>,
     url: String,
+    source_query: Option<String>,
 }
 
 impl BackingTrack {
@@ -56,6 +57,13 @@ impl BackingTrack {
         let minutes = seconds / 60;
         let seconds = seconds % 60;
         Some(format!("{minutes}:{seconds:02}"))
+    }
+
+    fn search_text(&self) -> String {
+        match &self.source_query {
+            Some(query) if !query.trim().is_empty() => format!("{} {}", self.title, query),
+            _ => self.title.clone(),
+        }
     }
 }
 
@@ -79,6 +87,19 @@ enum BackingSearchMessage {
     Complete(Result<Vec<BackingTrack>, String>),
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum BackingLibraryView {
+    SearchResults,
+    Favorites,
+}
+
+#[derive(Clone, Debug, Default)]
+struct BackingTrackContext {
+    root: Option<String>,
+    quality: Option<String>,
+    genre: Option<String>,
+}
+
 pub struct BackingTracksState {
     query: String,
     editing_query: bool,
@@ -92,6 +113,9 @@ pub struct BackingTracksState {
     ipc_socket: Option<PathBuf>,
     progress: PlayerProgress,
     last_progress_poll: Instant,
+    favorites: Vec<BackingTrack>,
+    library_view: BackingLibraryView,
+    message: Option<String>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -403,10 +427,25 @@ impl App {
 
     pub fn backing_toggle_selected(&mut self) {
         self.backing_tracks.toggle_selected();
+        if let Some(context) = self.backing_tracks.now_playing_context() {
+            self.music.set_context(
+                context.root.as_deref(),
+                context.quality.as_deref(),
+                context.genre.as_deref(),
+            );
+        }
     }
 
     pub fn backing_stop(&mut self) {
         self.backing_tracks.stop();
+    }
+
+    pub fn backing_toggle_favorite(&mut self) {
+        self.backing_tracks.toggle_favorite();
+    }
+
+    pub fn backing_toggle_library_view(&mut self) {
+        self.backing_tracks.toggle_library_view();
     }
 }
 
@@ -427,6 +466,9 @@ impl BackingTracksState {
             ipc_socket: None,
             progress: PlayerProgress::default(),
             last_progress_poll: Instant::now(),
+            favorites: load_favorites(),
+            library_view: BackingLibraryView::SearchResults,
+            message: None,
         }
     }
 
@@ -443,7 +485,18 @@ impl BackingTracksState {
     }
 
     pub fn results(&self) -> &[BackingTrack] {
-        &self.results
+        match self.library_view {
+            BackingLibraryView::SearchResults => &self.results,
+            BackingLibraryView::Favorites => &self.favorites,
+        }
+    }
+
+    pub fn favorites_len(&self) -> usize {
+        self.favorites.len()
+    }
+
+    pub fn library_view(&self) -> BackingLibraryView {
+        self.library_view
     }
 
     pub fn search_state(&self) -> &BackingSearchState {
@@ -462,8 +515,18 @@ impl BackingTracksState {
         &self.progress
     }
 
+    pub fn message(&self) -> Option<&str> {
+        self.message.as_deref()
+    }
+
+    pub fn selected_is_favorite(&self) -> bool {
+        self.selected_track()
+            .is_some_and(|track| self.is_favorite(track))
+    }
+
     fn begin_search_edit(&mut self) {
         self.editing_query = true;
+        self.library_view = BackingLibraryView::SearchResults;
     }
 
     fn push_query_char(&mut self, c: char) {
@@ -494,6 +557,8 @@ impl BackingTracksState {
         self.search_rx = Some(rx);
         self.search_state = BackingSearchState::Searching;
         self.editing_query = false;
+        self.library_view = BackingLibraryView::SearchResults;
+        self.message = None;
 
         thread::spawn(move || {
             let result = search_youtube(&query, Self::SEARCH_LIMIT);
@@ -508,6 +573,7 @@ impl BackingTracksState {
                     self.results = results;
                     self.selected_index = 0;
                     self.search_state = BackingSearchState::Ready;
+                    self.message = None;
                 }
                 Ok(BackingSearchMessage::Complete(Err(message))) => {
                     self.results.clear();
@@ -568,17 +634,26 @@ impl BackingTracksState {
     }
 
     fn toggle_selected(&mut self) {
-        if self.player.is_some() {
-            self.toggle_pause();
-            return;
-        }
-
-        let Some(track) = self.results.get(self.selected_index).cloned() else {
+        let Some(track) = self.selected_track().cloned() else {
             self.player_state =
                 BackingPlayerState::Failed("Search and select a track first.".to_string());
             return;
         };
 
+        if self
+            .now_playing
+            .as_ref()
+            .is_some_and(|now_playing| now_playing.url == track.url)
+        {
+            self.toggle_pause();
+            return;
+        }
+
+        self.stop();
+        self.play_track(track);
+    }
+
+    fn play_track(&mut self, track: BackingTrack) {
         let ipc_socket = player_socket_path();
         let _ = std::fs::remove_file(&ipc_socket);
 
@@ -618,6 +693,57 @@ impl BackingTracksState {
         self.cleanup_ipc_socket();
         self.progress = PlayerProgress::default();
         self.player_state = BackingPlayerState::Stopped;
+    }
+
+    fn toggle_favorite(&mut self) {
+        let Some(track) = self.selected_track().cloned() else {
+            self.message = Some("Select a track before favoriting.".to_string());
+            return;
+        };
+
+        if let Some(index) = self
+            .favorites
+            .iter()
+            .position(|favorite| favorite.url == track.url)
+        {
+            let removed = self.favorites.remove(index);
+            self.message = Some(format!("Removed favorite: {}", removed.title));
+            if self.library_view == BackingLibraryView::Favorites
+                && self.selected_index >= self.favorites.len()
+            {
+                self.selected_index = self.favorites.len().saturating_sub(1);
+            }
+        } else {
+            self.favorites.push(track.clone());
+            self.message = Some(format!("Favorited: {}", track.title));
+        }
+
+        if let Err(err) = save_favorites(&self.favorites) {
+            self.message = Some(format!("Could not save favorites: {err}"));
+        }
+    }
+
+    fn toggle_library_view(&mut self) {
+        self.library_view = match self.library_view {
+            BackingLibraryView::SearchResults => BackingLibraryView::Favorites,
+            BackingLibraryView::Favorites => BackingLibraryView::SearchResults,
+        };
+        self.selected_index = 0;
+        self.message = None;
+    }
+
+    fn selected_track(&self) -> Option<&BackingTrack> {
+        self.results().get(self.selected_index)
+    }
+
+    pub fn is_favorite(&self, track: &BackingTrack) -> bool {
+        self.favorites
+            .iter()
+            .any(|favorite| favorite.url == track.url)
+    }
+
+    fn now_playing_context(&self) -> Option<BackingTrackContext> {
+        self.now_playing.as_ref().map(infer_track_context)
     }
 
     fn toggle_pause(&mut self) {
@@ -765,11 +891,162 @@ fn search_youtube(query: &str, limit: usize) -> Result<Vec<BackingTrack>, String
                 channel: entry.channel.or(entry.uploader),
                 duration_seconds: entry.duration.map(|seconds| seconds.round() as u64),
                 url: youtube_watch_url(&url),
+                source_query: Some(query.to_string()),
             })
         })
         .collect::<Vec<_>>();
 
     Ok(tracks)
+}
+
+fn infer_track_context(track: &BackingTrack) -> BackingTrackContext {
+    let text = track.search_text();
+    BackingTrackContext {
+        root: infer_root(&text),
+        quality: infer_quality(&text),
+        genre: infer_genre(&text),
+    }
+}
+
+fn infer_root(text: &str) -> Option<String> {
+    let normalized = normalize_inference_text(text);
+    let tokens = normalized.split_whitespace().collect::<Vec<_>>();
+    for (index, token) in tokens.iter().enumerate() {
+        if matches!(*token, "in" | "key" | "of") {
+            if let Some(root) = tokens
+                .get(index + 1)
+                .and_then(|token| root_from_token(token))
+            {
+                return Some(root);
+            }
+        }
+    }
+
+    tokens.iter().find_map(|token| root_from_token(token))
+}
+
+fn infer_quality(text: &str) -> Option<String> {
+    let normalized = normalize_inference_text(text);
+    let has_minor_key_token = normalized.split_whitespace().any(|token| {
+        matches!(
+            token,
+            "cm" | "c#m"
+                | "dbm"
+                | "dm"
+                | "d#m"
+                | "ebm"
+                | "em"
+                | "fm"
+                | "f#m"
+                | "gbm"
+                | "gm"
+                | "g#m"
+                | "abm"
+                | "am"
+                | "a#m"
+                | "bbm"
+                | "bm"
+        )
+    });
+    if normalized.contains(" minor ")
+        || normalized.contains(" min ")
+        || normalized.contains(" dorian ")
+        || normalized.contains(" aeolian ")
+        || has_minor_key_token
+    {
+        Some("Minor".to_string())
+    } else if normalized.contains(" major ") || normalized.contains(" maj ") {
+        Some("Major".to_string())
+    } else {
+        None
+    }
+}
+
+fn infer_genre(text: &str) -> Option<String> {
+    let normalized = normalize_inference_text(text);
+    [
+        ("blues", "Blues"),
+        ("rock", "Rock"),
+        ("jazz", "Jazz"),
+        ("metal", "Metal"),
+        ("funk", "Funk"),
+    ]
+    .iter()
+    .find_map(|(needle, genre)| normalized.contains(needle).then(|| (*genre).to_string()))
+}
+
+fn root_from_token(token: &str) -> Option<String> {
+    match token.trim_matches(|c: char| !c.is_ascii_alphanumeric() && c != '#') {
+        "c" => Some("C".to_string()),
+        "cm" | "cmin" => Some("C".to_string()),
+        "c#" | "cs" | "db" => Some("Cs".to_string()),
+        "c#m" | "c#min" | "csm" | "csmin" | "dbm" | "dbmin" => Some("Cs".to_string()),
+        "d" => Some("D".to_string()),
+        "dm" | "dmin" => Some("D".to_string()),
+        "d#" | "ds" | "eb" => Some("Ds".to_string()),
+        "d#m" | "d#min" | "dsm" | "dsmin" | "ebm" | "ebmin" => Some("Ds".to_string()),
+        "e" => Some("E".to_string()),
+        "em" | "emin" => Some("E".to_string()),
+        "f" => Some("F".to_string()),
+        "fm" | "fmin" => Some("F".to_string()),
+        "f#" | "fs" | "gb" => Some("Fs".to_string()),
+        "f#m" | "f#min" | "fsm" | "fsmin" | "gbm" | "gbmin" => Some("Fs".to_string()),
+        "g" => Some("G".to_string()),
+        "gm" | "gmin" => Some("G".to_string()),
+        "g#" | "gs" | "ab" => Some("Gs".to_string()),
+        "g#m" | "g#min" | "gsm" | "gsmin" | "abm" | "abmin" => Some("Gs".to_string()),
+        "a" => Some("A".to_string()),
+        "am" | "amin" => Some("A".to_string()),
+        "a#" | "as" | "bb" => Some("As".to_string()),
+        "a#m" | "a#min" | "asm" | "asmin" | "bbm" | "bbmin" => Some("As".to_string()),
+        "b" => Some("B".to_string()),
+        "bm" | "bmin" => Some("B".to_string()),
+        _ => None,
+    }
+}
+
+fn normalize_inference_text(text: &str) -> String {
+    format!(
+        " {} ",
+        text.replace('♯', "#")
+            .replace('♭', "b")
+            .replace('-', " ")
+            .replace('_', " ")
+            .to_ascii_lowercase()
+    )
+}
+
+fn load_favorites() -> Vec<BackingTrack> {
+    let path = favorites_path();
+    let Ok(bytes) = std::fs::read(path) else {
+        return Vec::new();
+    };
+    serde_json::from_slice(&bytes).unwrap_or_default()
+}
+
+fn save_favorites(favorites: &[BackingTrack]) -> Result<(), String> {
+    let path = favorites_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|err| format!("failed to create {}: {err}", parent.display()))?;
+    }
+    let bytes = serde_json::to_vec_pretty(favorites)
+        .map_err(|err| format!("failed to encode favorites: {err}"))?;
+    std::fs::write(&path, bytes).map_err(|err| format!("failed to write {}: {err}", path.display()))
+}
+
+fn favorites_path() -> PathBuf {
+    data_dir().join("favorites.json")
+}
+
+fn data_dir() -> PathBuf {
+    if let Some(home) = std::env::var_os("HOME") {
+        return Path::new(&home)
+            .join(".local")
+            .join("share")
+            .join("groove-tui");
+    }
+    std::env::temp_dir().join("groove-tui")
 }
 
 fn youtube_watch_url(value: &str) -> String {

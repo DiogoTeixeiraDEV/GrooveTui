@@ -68,9 +68,13 @@ Backing tab
 - `Arrow Up`: previous result
 - `Arrow Down`: next result
 - `Space`: play/pause selected track
+- `F`: favorite/unfavorite selected track
+- `V`: switch between search results and favorites
 - `S`: stop playback
 
 Use `Tab` to switch between Groove, Tuner, and Backing. In the Tuner tab, select an input device and press `Space` to start capture.
+
+When a backing track starts, GrooveTui tries to infer the key, major/minor quality, and genre from the track title/search text, then updates the Groove tab's scale suggestions and fretboard overlay.
 
 ## Tech Stack
 

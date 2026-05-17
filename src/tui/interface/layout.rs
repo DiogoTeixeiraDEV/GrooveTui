@@ -72,7 +72,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             " [Tab] Switch | [Space] Play/Pause | [Q] Quit | [↑/↓] BPM | [←/→] Root | [< / >] Major/Minor | [G] Genre "
         }
         AppTab::Tuner => " [Tab] Switch | [Q] Quit | [↑/↓] Gain  | [M] Mode | [A/D] Target String | (Space) Toggle Capture ",
-        AppTab::Backing => " [Tab] Switch | [/] Search | [Enter] Run Search | [↑/↓] Select | [Space] Play/Pause | [S] Stop | [Q] Quit ",
+        AppTab::Backing => " [Tab] Switch | [/] Search | [Enter] Run Search | [↑/↓] Select | [Space] Play/Pause | [F] Favorite | [V] View | [S] Stop | [Q] Quit ",
     };
     let footer = Paragraph::new(help_text)
         .alignment(Alignment::Center)

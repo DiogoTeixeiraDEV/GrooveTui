@@ -2,10 +2,10 @@ use ratatui::{prelude::*, widgets::*};
 
 use crate::app::{App, AppTab};
 
-use crate::tui::interface::{groove, tuner};
+use crate::tui::interface::{backing, groove, tuner};
 
 pub fn ui(f: &mut Frame, app: &App) {
-    let size = f.size();
+    let size = f.area();
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -28,13 +28,17 @@ pub fn ui(f: &mut Frame, app: &App) {
         );
     f.render_widget(header, chunks[0]);
 
-    let tab_titles = vec!["Groove", "Tuner"]
+    let tab_titles = vec!["Groove", "Tuner", "Backing"]
         .into_iter()
         .map(Line::from)
         .collect::<Vec<_>>();
     let tabs = Tabs::new(tab_titles)
         .select(app.current_tab_index())
-        .highlight_style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+        .highlight_style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
         .style(Style::default().fg(Color::Gray))
         .block(Block::default().borders(Borders::ALL));
     f.render_widget(tabs, chunks[1]);
@@ -58,6 +62,9 @@ pub fn ui(f: &mut Frame, app: &App) {
         AppTab::Tuner => {
             tuner::tuner::render(f, chunks[2], app);
         }
+        AppTab::Backing => {
+            backing::tracks::render(f, chunks[2], app);
+        }
     }
 
     let help_text = match app.current_tab() {
@@ -65,6 +72,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             " [Tab] Switch | [Space] Play/Pause | [Q] Quit | [↑/↓] BPM | [←/→] Root | [< / >] Major/Minor | [G] Genre "
         }
         AppTab::Tuner => " [Tab] Switch | [Q] Quit | [↑/↓] Gain  | [M] Mode | [A/D] Target String | (Space) Toggle Capture ",
+        AppTab::Backing => " [Tab] Switch | [/] Search | [Enter] Run Search | [↑/↓] Select | [Space] Play/Pause | [S] Stop | [Q] Quit ",
     };
     let footer = Paragraph::new(help_text)
         .alignment(Alignment::Center)
